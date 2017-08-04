@@ -16,31 +16,113 @@ package com.google.codeu.mathlang.impl;
 
 import java.io.IOException;
 
+import com.google.codeu.mathlang.core.tokens.NameToken;
+import com.google.codeu.mathlang.core.tokens.NumberToken;
+import com.google.codeu.mathlang.core.tokens.StringToken;
+import com.google.codeu.mathlang.core.tokens.SymbolToken;
 import com.google.codeu.mathlang.core.tokens.Token;
 import com.google.codeu.mathlang.parsing.TokenReader;
 
-// MY TOKEN READER
-//
-// This is YOUR implementation of the token reader interface. To know how
-// it should work, read src/com/google/codeu/mathlang/parsing/TokenReader.java.
-// You should not need to change any other files to get your token reader to
-// work with the test of the system.
 public final class MyTokenReader implements TokenReader {
 
-  public MyTokenReader(String source) {
-    // Your token reader will only be given a string for input. The string will
-    // contain the whole source (0 or more lines).
+  String source;
+  int index;
+
+  public MyTokenReader(String source) 
+  {
+    this.source = source;
   }
 
-  @Override
+    @Override
   public Token next() throws IOException {
-    // Most of your work will take place here. For every call to |next| you should
-    // return a token until you reach the end. When there are no more tokens, you
-    // should return |null| to signal the end of input.
-
-    // If for any reason you detect an error in the input, you may throw an IOException
-    // which will stop all execution.
-
+    char[] symbols = {'+','-',';','=','(',')','\u0000','\"','\''};
+    try {
+      char curr;
+      do {
+        curr = nextChar();
+      }
+      while (curr == '\n' || curr == ' ');
+      if(Character.isLetter(curr)) {
+        return new NameToken(name(curr));
+      } else if (curr >= '0' && curr <= '9') {
+        return new NumberToken(num(curr));
+      }
+      if (curr == '+') {
+        return new SymbolToken('+');
+      } if (curr == '-') {
+        return new SymbolToken('-');
+      } if (curr == ';') {
+        return new SymbolToken(';');
+      } if (curr == '=') {
+        return new SymbolToken('=');
+      } if (curr == ')') {
+        return new SymbolToken(')');
+      } if (curr == '(') {
+        return new SymbolToken('(');
+      } if (curr == '\u0000') {
+        return null;
+      } if (curr == '\"') {
+        return new StringToken(string(curr));
+      } 
+    }
+    catch(IOException exception) {
+      exception.printStackTrace();
+      throw new IOException("Error while parsing source");
+    } 
     return null;
+  }
+
+  private void prev() {
+    index --;
+  }
+  public char nextChar() throws IOException {
+    try {
+      if(index < source.length()) {
+        return source.charAt(index ++);
+      } else {
+        return '\u0000';
+      }
+    }
+    catch(Exception e) {
+      throw new IOException("Error while parsing source");
+    }
+  }
+
+  private String string(char c) throws IOException {
+    String name = "";
+    try {
+      c = nextChar();
+      while(c != '\u0000' && c != '\"') {
+        name += c;
+        c = nextChar();
+      }
+    }
+    catch(IOException exception)
+    {
+      throw new IOException("Error while parsing source");
+    }
+    return name;
+  }
+
+  private String name(char c) throws IOException {
+    String name = Character.toString(c);
+    try {
+      c = nextChar();
+      while((Character.isLetter(c)) && (c != '\u0000') && (c != ' ') && (c != ';')) {
+        name += c;
+        c = nextChar();
+      }
+      if(!Character.isLetter(c)) {
+        prev();
+      }
+    } catch(IOException e) {
+      throw new IOException("Error while parsing source");
+    }
+    return name;
+  } 
+
+  private double num(char c) {
+    String anum = Character.toString(c);
+    return Double.parseDouble(anum);
   }
 }
